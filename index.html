@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Smart Landlord</title>
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --navy-dark: #0b2545; /* dark navy */
+      --orange-dark: #d35400; /* dark orange */
+      --bg-contrast: #0f335e;
+      --muted: #c9d6ea;
+      --card: #0b2a4a;
+      --white: #ffffff;
+      --danger: #b71c1c;
+      --radius: 10px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:'Poppins',system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#071428 0%, #0b2545 100%);color:var(--muted)}
+    a{color:inherit;text-decoration:none}
+    header{background:linear-gradient(90deg,var(--navy-dark), rgba(11,37,69,0.8));color:var(--white);padding:14px 24px;display:flex;align-items:center;gap:14px}
+    header .logo{display:flex;align-items:center;gap:12px}
+    header .logo svg{width:56px;height:56px;border-radius:8px;background:linear-gradient(145deg,var(--orange-dark), #ff8c42);padding:6px}
+    header h1{margin:0;font-size:22px;letter-spacing:0.5px}
+    header p{margin:0;font-size:12px;opacity:0.9}
+    footer{background:var(--navy-dark);color:var(--muted);padding:12px 20px;text-align:center}
+
+    /* Container */
+    .container{max-width:1000px;margin:28px auto;padding:18px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:var(--radius);box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+
+    /* Views */
+    .view{display:none}
+    .view.active{display:block}
+
+    /* Card & forms */
+    .card{background:var(--card);padding:18px;border-radius:10px}
+    label{display:block;margin:10px 0 6px;font-size:13px}
+    input[type=text], input[type=password], input[type=number], select, textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--muted)}
+    button{background:var(--orange-dark);border:none;padding:10px 14px;border-radius:8px;color:var(--white);cursor:pointer;font-weight:600}
+    button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06)}
+    .row{display:flex;gap:12px}
+    .col{flex:1}
+    .muted{color:#9fb0d3;font-size:13px}
+
+    /* Houses grid */
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:12px}
+    .house{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;border-radius:10px}
+    .house img{width:100%;height:140px;object-fit:cover;border-radius:8px}
+    .house h4{margin:8px 0 4px;color:var(--white)}
+    .status{display:inline-block;padding:6px 8px;border-radius:999px;font-weight:700}
+    .status.vacant{color:green} /* user requested: vacant = green */
+    .status.booked{color:orange} /* booked = orange */
+    .status.occupied{color:red} /* occupied = red */
+
+    table{width:100%;border-collapse:collapse;color:var(--muted)}
+    th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left}
+    th{font-size:13px;color:var(--white)}
+    .small{font-size:13px}
+
+    /* Background-only pages */
+    body.bg-image{background-image:radial-gradient(circle at 10% 20%, rgba(211,84,0,0.06), transparent 10%), radial-gradient(circle at 90% 80%, rgba(11,37,69,0.04), transparent 12%), url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600"><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="%230b2545" stop-opacity="1"/><stop offset="1" stop-color="%23d35400" stop-opacity="0.06"/></linearGradient></defs><rect width="100%" height="100%" fill="url(%23g)"/></svg>');background-size:cover}
+
+    .top-actions{display:flex;gap:12px;align-items:center}
+    .logo-text{display:flex;flex-direction:column}
+    .note{background:rgba(255,255,255,0.02);padding:8px;border-radius:8px}
+
+    @media(max-width:700px){header h1{font-size:16px} .row{flex-direction:column}}
+  </style>
+</head>
+<body class="bg-image">
+  <header>
+    <div class="logo">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+        <rect width="100" height="100" rx="16" fill="#fff" opacity="0.08" />
+        <circle cx="50" cy="35" r="14" fill="#fff" opacity="0.9" />
+        <rect x="18" y="64" width="64" height="12" rx="6" fill="#fff" opacity="0.85" />
+      </svg>
+      <div class="logo-text">
+        <h1>Smart Landlord</h1>
+        <p style="margin-top:2px">Rent, track, relax</p>
+      </div>
+    </div>
+    <div style="flex:1"></div>
+    <div class="top-actions">
+      <button id="goto-home" class="secondary">Home</button>
+      <button id="goto-houses" class="secondary">View Houses</button>
+      <button id="goto-login" class="secondary">Login</button>
+      <button id="goto-register" class="secondary">Register</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- HOME -->
+    <section id="view-home" class="view active card">
+      <h2>Welcome to Smart Landlord</h2>
+      <p class="muted">A simple demo app to register landlords and tenants, list properties, book houses and track payments.</p>
+      <div style="margin-top:18px">
+        <button id="home-login">Login</button>
+        <button id="home-register" class="secondary">Register</button>
+        <button id="home-houses" class="secondary">View Houses</button>
+      </div>
+    </section>
+
+    <!-- REGISTER -->
+    <section id="view-register" class="view card">
+      <h3>Register</h3>
+      <p class="muted">Create a tenant or landlord account.</p>
+      <form id="form-register">
+        <label>Account type</label>
+        <select id="reg-role">
+          <option value="tenant">Tenant</option>
+          <option value="landlord">Landlord</option>
+        </select>
+        <label>Username</label>
+        <input id="reg-username" required type="text" placeholder="username">
+        <div id="tenant-fields">
+          <label>Phone number</label>
+          <input id="reg-phone" type="text" placeholder="07xxxxxxxx">
+        </div>
+        <label>Password</label>
+        <input id="reg-password" type="password">
+        <div id="landlord-fields" style="display:none">
+          <label>Landlord Access Code</label>
+          <input id="reg-accesscode" type="text" placeholder="enter landlord access code">
+          <p class="muted">Ask the admin for the landlord access code.</p>
+        </div>
+        <div style="margin-top:12px">
+          <button type="submit">Register</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- LOGIN -->
+    <section id="view-login" class="view card">
+      <h3>Login</h3>
+      <form id="form-login">
+        <label>Username</label>
+        <input id="login-username" type="text">
+        <label>Password</label>
+        <input id="login-password" type="password">
+        <div style="margin-top:12px">
+          <button type="submit">Login</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- TENANT DASHBOARD -->
+    <section id="view-tenant" class="view card">
+      <h3 id="tenant-welcome">Welcome, Tenant</h3>
+      <p class="muted">Tenant dashboard. Download the rules, sign and upload to send it to landlord.</p>
+      <div class="row" style="margin-top:12px">
+        <div class="col">
+          <button id="tenant-view-houses">View Houses</button>
+        </div>
+        <div class="col">
+          <button id="tenant-payment">Payment</button>
+        </div>
+        <div class="col">
+          <button id="tenant-logout" class="secondary">Logout</button>
+        </div>
+      </div>
+
+      <hr style="margin:16px 0; border-color: rgba(255,255,255,0.03)">
+      <div>
+        <h4>Rules & Regulations</h4>
+        <p class="muted">Download the form, sign it and upload it back below.</p>
+        <button id="download-rules">Download Rules & Regulations</button>
+        <div style="margin-top:12px">
+          <label>Upload signed form</label>
+          <input type="file" id="upload-signed" accept=".pdf,.txt,.doc,.docx,image/*">
+        </div>
+      </div>
+    </section>
+
+    <!-- PAYMENT -->
+    <section id="view-payment" class="view card">
+      <h3>Payment</h3>
+      <p class="muted">Lipa na M-Pesa - Paybill 247247 Acc 0741875354</p>
+      <form id="form-payment">
+        <label>Choose property (if paying for a specific property)</label>
+        <select id="pay-property">
+          <option value="">-- none --</option>
+        </select>
+        <label>Payment purpose</label>
+        <select id="pay-purpose">
+          <option value="rent">Rent</option>
+          <option value="deposit">Deposit</option>
+          <option value="both">Deposit and Rent</option>
+        </select>
+        <label>M-Pesa Transaction Code (paste here)</label>
+        <input id="pay-mpesa" type="text" placeholder="e.g. ABC123XYZ">
+        <div style="margin-top:12px">
+          <button type="submit">Submit Payment / Book</button>
+          <button id="payment-cancel" type="button" class="secondary">Cancel</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- LANDLORD DASHBOARD -->
+    <section id="view-landlord" class="view card">
+      <h3 id="landlord-welcome">Welcome, Landlord</h3>
+      <p class="muted">Add properties and manage tenants & payments.</p>
+      <div style="margin-top:12px" class="card">
+        <h4>Add a property</h4>
+        <form id="form-add-property">
+          <label>Property location</label>
+          <input id="prop-location" type="text">
+          <label>House type</label>
+          <select id="prop-type">
+            <option value="single room">single room</option>
+            <option value="bedsitter">bedsitter</option>
+            <option value="one bedroom">one bedroom</option>
+            <option value="2 bedroom">2 bedroom</option>
+          </select>
+          <label>Rent paid (monthly)</label>
+          <input id="prop-rent" type="text">
+          <label>Deposit</label>
+          <input id="prop-deposit" type="text">
+          <label>House image</label>
+          <input id="prop-image" type="file" accept="image/*">
+          <label>House number</label>
+          <input id="prop-number" type="text">
+          <div style="margin-top:10px">
+            <button type="submit">Add Property</button>
+          </div>
+        </form>
+      </div>
+
+      <hr style="margin:12px 0; border-color: rgba(255,255,255,0.03)">
+      <h4>Tenants (All registered tenants)</h4>
+      <p class="muted">This table updates when a tenant registers or uploads their signed form.</p>
+      <div style="overflow:auto; max-height:280px;">
+        <table id="tenants-table">
+          <thead>
+            <tr><th>Name</th><th>Phone</th><th>House Occupied</th><th>Payment Status</th><th>Signed Form</th><th>Actions</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <hr style="margin:12px 0; border-color: rgba(255,255,255,0.03)">
+      <h4>Your Properties</h4>
+      <div id="landlord-properties"></div>
+    </section>
+
+    <!-- HOUSES PAGE -->
+    <section id="view-houses" class="view card">
+      <h3>Available Houses</h3>
+      <div id="houses-grid" class="grid"></div>
+    </section>
+
+  </main>
+
+  <footer>
+    &copy; <span id="year"></span> Smart Landlord. Designed by Joed Designs 0741384144, 0741875354
+  </footer>
+
+  <script>
+    /******************************************************************
+     * Smart Landlord - Single-file demo
+     * - Storage: localStorage (for demo only)
+     * - Landlord access code: 23102340
+     * - Beginner-friendly, commented code
+     ******************************************************************/
+
+    // Helper selectors
+    const $ = id => document.getElementById(id);
+
+    // App state stored in localStorage key 'smartlandlord:data'
+    const STORAGE_KEY = 'smartlandlord:data';
+    const LANDLORD_ACCESS_CODE = '23102340';
+
+    function loadData(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw){
+        const seed = { users: [], properties: [], payments: [] };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
+        return seed;
+      }
+      return JSON.parse(raw);
+    }
+    function saveData(data){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+    function uid(prefix='id'){ return prefix+Math.random().toString(36).slice(2,9); }
+
+    // Render helpers
+    function showView(id){
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      const view = $(id);
+      if(!view) return;
+      view.classList.add('active');
+
+      // Background image only on home, login, register
+      const body = document.body;
+      if(['view-home','view-login','view-register'].includes(id)) body.classList.add('bg-image'); else body.classList.remove('bg-image');
+
+      // extra rendering per view
+      if(id === 'view-houses') renderHouses();
+      if(id === 'view-landlord') renderLandlordPage();
+      if(id === 'view-tenant') renderTenantPage();
+      if(id === 'view-payment') renderPaymentForm();
+    }
+
+    // AUTH
+    function registerUser(e){
+      e && e.preventDefault();
+      const data = loadData();
+      const role = $('reg-role').value;
+      const username = $('reg-username').value.trim();
+      const password = $('reg-password').value;
+      if(!username || !password){ alert('Enter username and password'); return; }
+      if(data.users.find(u=>u.username === username)){ alert('Username already exists'); return; }
+      if(role === 'tenant'){
+        const phone = $('reg-phone').value.trim();
+        if(!phone){ alert('Tenant must provide phone'); return; }
+        const user = { id: uid('user'), username, password, role:'tenant', phone, rulesFile: null, occupiedHouseId: null };
+        data.users.push(user);
+        saveData(data);
+        alert('Tenant registered — please login');
+        showView('view-login');
+      } else {
+        const code = $('reg-accesscode').value.trim();
+        if(code !== LANDLORD_ACCESS_CODE){ alert('Invalid landlord access code'); return; }
+        const user = { id: uid('user'), username, password, role:'landlord', phone:null };
+        data.users.push(user);
+        saveData(data);
+        alert('Landlord registered — please login');
+        showView('view-login');
+      }
+    }
+
+    function loginUser(e){
+      e && e.preventDefault();
+      const data = loadData();
+      const username = $('login-username').value.trim();
+      const password = $('login-password').value;
+      const user = data.users.find(u => u.username === username && u.password === password);
+      if(!user){ alert('Invalid credentials'); return; }
+      sessionStorage.setItem('smartlandlord:currentUser', user.id);
+      if(user.role === 'tenant') showView('view-tenant'); else showView('view-landlord');
+      renderAfterLogin();
+    }
+
+    function logout(){ sessionStorage.removeItem('smartlandlord:currentUser'); showView('view-home'); }
+
+    function currentUser(){ const id = sessionStorage.getItem('smartlandlord:currentUser'); if(!id) return null; const data=loadData(); return data.users.find(u=>u.id===id) || null; }
+
+    // PROPERTY MANAGEMENT
+    async function handleAddProperty(e){
+      e && e.preventDefault();
+      const data = loadData();
+      const user = currentUser(); if(!user || user.role!=='landlord'){ alert('Only landlords can add properties'); return; }
+      const location = $('prop-location').value.trim();
+      const type = $('prop-type').value;
+      const rent = $('prop-rent').value.trim();
+      const deposit = $('prop-deposit').value.trim();
+      const number = $('prop-number').value.trim();
+      const file = $('prop-image').files[0];
+      let imgData = '';
+      if(file){ imgData = await fileToBase64(file); }
+      const property = { id: uid('prop'), landlordId: user.id, location, type, rent, deposit, image: imgData, number, status: 'vacant', bookedBy: null };
+      data.properties.push(property);
+      saveData(data);
+      alert('Property added');
+      $('form-add-property').reset();
+      renderLandlordPage();
+    }
+
+    // RENDER HOUSES
+    function renderHouses(){
+      const data = loadData();
+      const grid = $('houses-grid'); grid.innerHTML='';
+      data.properties.forEach(prop=>{
+        const el = document.createElement('div'); el.className='house card';
+        const img = document.createElement('img'); img.src = prop.image || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="100%" height="100%" fill="%230b2545"/></svg>';
+        el.appendChild(img);
+        const title = document.createElement('h4'); title.textContent = `${prop.type} — ${prop.location}`; el.appendChild(title);
+        const small = document.createElement('div'); small.className='muted small'; small.textContent = `Rent: ${prop.rent} | Deposit: ${prop.deposit} | No: ${prop.number}`; el.appendChild(small);
+        const statusBadge = document.createElement('div'); statusBadge.className='status ' + (prop.status||'vacant');
+        statusBadge.textContent = prop.status ? prop.status.toUpperCase() : 'VACANT';
+        el.appendChild(statusBadge);
+        el.appendChild(document.createElement('br'));
+        // book button if vacant
+        if(prop.status === 'vacant'){
+          const btn = document.createElement('button'); btn.textContent = 'Book'; btn.onclick = ()=>{ sessionStorage.setItem('smartlandlord:selectedProperty', prop.id); showView('view-payment'); };
+          el.appendChild(btn);
+        } else {
+          const note = document.createElement('div'); note.className='muted small'; note.textContent = `Status: ${prop.status}`; el.appendChild(note);
+        }
+        grid.appendChild(el);
+      });
+    }
+
+    // PAYMENT
+    function renderPaymentForm(){
+      const select = $('pay-property'); select.innerHTML = '<option value="">-- none --</option>';
+      const data = loadData();
+      data.properties.forEach(p=>{ const opt = document.createElement('option'); opt.value=p.id; opt.textContent = `${p.type} - ${p.location} (${p.number}) [${p.status}]`; select.appendChild(opt); });
+      const selected = sessionStorage.getItem('smartlandlord:selectedProperty'); if(selected) select.value = selected;
+    }
+
+    function handlePayment(e){
+      e && e.preventDefault();
+      const data = loadData(); const user = currentUser(); if(!user || user.role !== 'tenant'){ alert('Only tenants can pay'); return; }
+      const propertyId = $('pay-property').value || sessionStorage.getItem('smartlandlord:selectedProperty') || null;
+      const purpose = $('pay-purpose').value;
+      const mpesa = $('pay-mpesa').value.trim();
+      if(!mpesa){ alert('Enter M-Pesa code'); return; }
+      const property = propertyId ? data.properties.find(p=>p.id===propertyId) : null;
+      const landlordId = property ? property.landlordId : null;
+      const payment = { id: uid('pay'), tenantId: user.id, landlordId, propertyId, purpose, mpesaCode: mpesa, timestamp: new Date().toISOString(), confirmed: false };
+      data.payments.push(payment);
+      // Set property to booked and record bookedBy
+      if(property){ property.status = 'booked'; property.bookedBy = user.id; }
+      saveData(data);
+      alert('Payment submitted. Landlord will confirm.');
+      sessionStorage.removeItem('smartlandlord:selectedProperty');
+      showView('view-tenant');
+    }
+
+    // LANDLORD PAGE RENDER
+    function renderLandlordPage(){
+      const data = loadData(); const user = currentUser(); if(!user || user.role !== 'landlord') return;
+      $('landlord-welcome').textContent = `Welcome, ${user.username}`;
+      // tenants table
+      const tbody = $('tenants-table').querySelector('tbody'); tbody.innerHTML='';
+      data.users.filter(u=>u.role==='tenant').forEach(t=>{
+        const tr = document.createElement('tr');
+        const occupiedTxt = t.occupiedHouseId ? (data.properties.find(p=>p.id===t.occupiedHouseId)?.number || 'Yes') : 'No';
+        const paymentStatus = data.payments.filter(p=>p.tenantId===t.id && p.confirmed).length ? 'Paid' : (data.payments.filter(p=>p.tenantId===t.id).length ? 'Pending' : 'None');
+        tr.innerHTML = `<td>${t.username}</td><td>${t.phone||'-'}</td><td>${occupiedTxt}</td><td>${paymentStatus}</td><td>${t.rulesFile ? '<button class="secondary small" data-file="'+t.id+'">View</button>' : 'No'}</td><td><button data-delete="${t.id}" class="secondary small">Delete</button></td>`;
+        tbody.appendChild(tr);
+      });
+      // attach file view and delete handlers
+      tbody.querySelectorAll('button[data-file]').forEach(b=>b.addEventListener('click', (ev)=>{
+        const tid = ev.target.getAttribute('data-file'); const tenant = data.users.find(u=>u.id===tid);
+        if(tenant && tenant.rulesFile){ const a = document.createElement('a'); a.href = tenant.rulesFile.data; a.download = tenant.rulesFile.name || 'signed_rules'; a.click(); } else alert('No uploaded file');
+      }));
+      tbody.querySelectorAll('button[data-delete]').forEach(b=>b.addEventListener('click', (ev)=>{
+        const tid = ev.target.getAttribute('data-delete'); if(confirm('Delete tenant?')){ data.users = data.users.filter(u=>u.id!==tid); // also remove payments and clear bookings referencing them
+          data.payments = data.payments.filter(p=>p.tenantId!==tid);
+          data.properties.forEach(p=>{ if(p.bookedBy===tid){ p.bookedBy=null; p.status='vacant'; } if(p.occupiedBy===tid){ p.occupiedBy=null; p.status='vacant'; } });
+          saveData(data); renderLandlordPage(); }
+      }));
+
+      // properties list for this landlord
+      const propsEl = $('landlord-properties'); propsEl.innerHTML='';
+      const myProps = data.properties.filter(p=>p.landlordId===user.id);
+      if(myProps.length===0) propsEl.innerHTML = '<p class="muted">No properties yet</p>';
+      myProps.forEach(p=>{
+        const wrap = document.createElement('div'); wrap.className='card'; wrap.style.marginBottom='8px';
+        wrap.innerHTML = `<div style="display:flex;gap:10px;align-items:center"><div style="width:120px"><img src='${p.image||"data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"300\"><rect width=\"100%\" height=\"100%\" fill=\"%230b2545\"/></svg>"}' style='width:120px;height:80px;object-fit:cover;border-radius:6px'></div>
+          <div style="flex:1"><strong>${p.type} — ${p.location} (${p.number})</strong><div class="muted small">Rent:${p.rent} | Deposit:${p.deposit}</div></div>
+          <div style="text-align:right"><div class="status ${p.status}">${p.status.toUpperCase()}</div>
+          <div style="margin-top:8px"><button data-deleteprop='${p.id}' class='secondary small'>Delete Property</button> <button data-markpaid='${p.id}'>Mark as Paid</button></div></div></div>`;
+        propsEl.appendChild(wrap);
+      });
+      // delete prop handlers
+      propsEl.querySelectorAll('button[data-deleteprop]').forEach(b=>b.addEventListener('click',(ev)=>{
+        const pid = ev.target.getAttribute('data-deleteprop'); if(confirm('Delete property?')){
+          const idx = data.properties.findIndex(x=>x.id===pid); if(idx>-1) data.properties.splice(idx,1);
+          saveData(data); renderLandlordPage(); }
+      }));
+      // mark as paid handlers: mark payments for this property as confirmed and set property to occupied
+      propsEl.querySelectorAll('button[data-markpaid]').forEach(b=>b.addEventListener('click',(ev)=>{
+        const pid = ev.target.getAttribute('data-markpaid'); const prop = data.properties.find(x=>x.id===pid);
+        if(!prop){ alert('Property not found'); return; }
+        // find payment(s) for this property that are unconfirmed
+        const pending = data.payments.filter(p=>p.propertyId===pid && !p.confirmed);
+        if(pending.length===0){ alert('No pending payments for this property'); return; }
+        // For demo we'll confirm all pending payments for this property and set occupied
+        if(confirm('Confirm payment(s) and mark occupied?')){
+          pending.forEach(p=> p.confirmed = true);
+          prop.status = 'occupied'; prop.occupiedBy = pending[0].tenantId; prop.bookedBy = pending[0].tenantId;
+          // mark tenant occupiedHouseId
+          const tenant = data.users.find(u=>u.id===pending[0].tenantId); if(tenant) tenant.occupiedHouseId = prop.id;
+          saveData(data); renderLandlordPage(); alert('Payments confirmed; property marked occupied');
+        }
+      }));
+    }
+
+    // TENANT PAGE RENDER
+    function renderTenantPage(){ const user = currentUser(); if(!user) return; $('tenant-welcome').textContent = `Welcome, ${user.username}`; }
+
+    // FILE upload for signed form
+    function handleUploadSigned(e){
+      const file = e.target.files[0]; if(!file) return; const user = currentUser(); if(!user){ alert('Login first'); return; }
+      fileToBase64(file).then(dataUrl=>{
+        const data = loadData(); const u = data.users.find(x=>x.id===user.id); u.rulesFile = { name: file.name, data: dataUrl }; saveData(data); alert('Signed form uploaded. Landlord can now view it.');
+      });
+    }
+
+    // UTILS
+    function fileToBase64(file){ return new Promise((res,rej)=>{ const fr = new FileReader(); fr.onload = ()=>res(fr.result); fr.onerror = rej; fr.readAsDataURL(file); }); }
+
+    // download rules text
+    function downloadRules(){ const rules = `SMART LANDLORD - RULES & REGULATIONS\n\nTenant name: ____________________\nProperty No: ____________________\n\n1. Rent to be paid by the agreed date each month.\n2. Deposit held against damage.\n3. No subletting without landlord consent.\n4. Keep property clean and report repairs.\n\nSignature: ____________________\nDate: ____________________\n`;
+      const blob = new Blob([rules], {type:'text/plain'}); const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='rules_and_regulations.txt'; a.click();
+    }
+
+    // initial load
+    function init(){
+      // wire navigation
+      $('goto-home').onclick = ()=> showView('view-home');
+      $('goto-houses').onclick = ()=> showView('view-houses');
+      $('goto-login').onclick = ()=> showView('view-login');
+      $('goto-register').onclick = ()=> showView('view-register');
+
+      $('home-login').onclick = ()=> showView('view-login');
+      $('home-register').onclick = ()=> showView('view-register');
+      $('home-houses').onclick = ()=> showView('view-houses');
+
+      // forms
+      $('form-register').onsubmit = registerUser;
+      $('form-login').onsubmit = loginUser;
+      $('form-add-property').onsubmit = handleAddProperty;
+      $('form-payment').onsubmit = handlePayment;
+
+      // other buttons
+      $('tenant-view-houses').onclick = ()=> showView('view-houses');
+      $('tenant-payment').onclick = ()=> showView('view-payment');
+      $('tenant-logout').onclick = logout;
+      $('download-rules').onclick = downloadRules;
+      $('upload-signed').onchange = handleUploadSigned;
+      $('payment-cancel').onclick = ()=> showView('view-tenant');
+
+      // toggle role-specific fields on register
+      $('reg-role').onchange = ()=>{ const r=$('reg-role').value; $('tenant-fields').style.display = r==='tenant' ? 'block':'none'; $('landlord-fields').style.display = r==='landlord' ? 'block':'none'; };
+
+      // footer year
+      $('year').textContent = new Date().getFullYear();
+
+      // initial render of houses
+      renderHouses();
+    }
+
+    // Called after login to update UI
+    function renderAfterLogin(){ const u = currentUser(); if(!u) return; if(u.role==='landlord') showView('view-landlord'); else showView('view-tenant'); }
+
+    // bootstrap
+    init();
+
+    // expose some helpers to console for debugging if needed
+    window._smart = { loadData, saveData, currentUser, showView };
+  </script>
+</body>
+</html>
